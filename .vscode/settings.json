@@ -1,0 +1,19 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "database-1.cnko2somc4xh.ap-south-1.rds.amazonaws.com",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "sqlectron",
+            "database": "firstdatabase",
+            "username": "ariharan",
+            "password": "BLUEdragon100!",
+            "connectionTimeout": 30
+        }
+    ]
+}
