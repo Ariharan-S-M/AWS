@@ -152,7 +152,7 @@
         });
     };
 
-    function Register() {
+ function Register() {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
   const gmail = document.getElementById("email").value.trim();
@@ -204,13 +204,14 @@
   })
   .then(res => {
     if (!res.ok) {
-      throw new Error('Network response was not ok');
+      return res.json().then(errData => {
+        throw errData;
+      });
     }
     return res.json();
   })
   .then(data => {
-    // Check for both 'success' and other possible success indicators
-    if (data.success || data.message?.includes('success') || data.status === 'success') {
+    if (data.success) {
       showVerificationModal();
       document.querySelector(".login-form").reset();
     } else {
@@ -221,7 +222,13 @@
   .catch(err => {
     console.error(err);
     responseMsg.style.color = "red";
-    responseMsg.textContent = "Registration failed. Please try again.";
+    if (err.message && err.message.includes('The username already exists')) {
+      responseMsg.textContent = "The username already exists, please try again!";
+    } else if (err.message && err.message.includes('Email already registered')) {
+      responseMsg.textContent = "Email already registered. Please use a different email.";
+    } else {
+      responseMsg.textContent = "Registration failed. Please try again.";
+    }
   });
 }
 
