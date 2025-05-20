@@ -2,6 +2,7 @@ const { createPool } = require('mysql');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+
 // Database connection
 const pool = createPool({
     host: "database-1.c1g4e2uw4ua7.ap-south-1.rds.amazonaws.com",
@@ -22,18 +23,6 @@ pool.getConnection((err, connection) => {
     connection.release();
 });
 
-function register(username, password, gmail, phone, gender, country) {
-    const insert = 'INSERT INTO users (username, password, gmail, phone, gender, country) VALUES (?, ?, ?, ?, ?, ?)';
-    const values = [username, password, gmail, phone, gender, country];
-    
-    pool.query(insert, values, (err, results) => {
-        if (err) {
-            console.error("DB Insertion Error:", err);
-        }
-        console.log("user inserted:", results);
-    });
-}
-
 // Email transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -43,20 +32,54 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-function mail(from, to, subject, text) {
-    const mailOptions = {
-        from: from,
-        to: to,
-        subject: subject,
-        text: text
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log('Email Not Sent:', error);
-        }
-        console.log('✅ Email sent:', info.response);
+// Add these new functions for verification
+async function createUnverifiedUser(username, password, gmail, phone, gender, country, verificationToken) {
+    return new Promise((resolve, reject) => {
+        const insert = `INSERT INTO users 
+            (username, password, gmail, phone, gender, country, verification_token, is_verified) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, false)`;
+        const values = [username, password, gmail, phone, gender, country, verificationToken];
+        
+        pool.query(insert, values, (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
+        });
     });
 }
 
-module.exports = { register, mail };
+async function verifyUser(token) {
+    return new Promise((resolve, reject) => {
+        pool.query(
+            'UPDATE users SET is_verified = true, verification_token = NULL WHERE verification_token = ?',
+            [token],
+            (err, results) => {
+                if (err) return reject(err);
+                resolve(results.affectedRows > 0);
+            }
+        );
+    });
+}
+
+async function sendVerificationEmail(email, token) {
+    const verificationLink = `http://13.126.122.0:3000/verify?token=${token}`;
+    
+    const mailOptions = {
+        from: 'ariharan86400@gmail.com',
+        to: email,
+        subject: 'Verify Your Email',
+        html: `<p>Click <a href="${verificationLink}">here</a> to verify your email.</p>`
+    };
+
+    return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) return reject(error);
+            resolve(info);
+        });
+    });
+}
+
+module.exports = { 
+    createUnverifiedUser, 
+    verifyUser, 
+    sendVerificationEmail 
+};

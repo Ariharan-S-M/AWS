@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up Page</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+    }
+
+    .radio-group label {
+      font-weight: normal;
+    }
+
+    .phone-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .phone-row select {
+      width: 50%;
+    }
+
+    .phone-row input {
+      width: 50%;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* New styles for verification modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Create an Account</h2>
+    <form class="login-form" onsubmit="return false">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Choose a username" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Create a password" required />
+
+      <label for="email">Gmail</label>
+      <input type="email" id="email" placeholder="Enter your Gmail" required />
+
+      <label for="phone">Phone</label>
+      <div class="phone-row">
+        <select id="country" required>
+          <option value="">Loading countries...</option>
+        </select>
+        <input type="tel" id="phone" placeholder="10-digit phone number" required />
+      </div>
+      <div id="phone-error" class="error"></div>
+
+      <label>Gender</label>
+      <div class="radio-group">
+        <label><input type="radio" name="gender" value="male" required /> Male</label>
+        <label><input type="radio" name="gender" value="female" /> Female</label>
+        <label><input type="radio" name="gender" value="other" /> Other</label>
+      </div>
+
+      <button type="button" class="signup-btn" onclick="Register()">Register</button>
+      <button type="button" class="login-btn" onclick="location.href='index.html'">Back to Login</button>
+
+      <div id="response-msg" class="message"></div>
+    </form>
+  </div>
+
+  <!-- Verification Modal -->
+  <div id="verificationModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3>Verification Email Sent</h3>
+      <p id="modalMessage">We've sent a verification link to your email address. Please check your inbox as well as spam folder 
+        and click the link to complete your registration.</p>
+      <p>Didn't receive the email? <a href="#" onclick="resendVerification()">Resend verification email</a></p>
+      <button onclick="closeModal()" class="login-btn">OK</button>
+    </div>
+  </div>
+
+  <script>
+    let countryData = []; // globally store country list
+    let lastSubmittedEmail = ''; // Track last submitted email for resend
+
+    // Load country data
+    window.onload = function () {
+      fetch('countries_pincode.json')
+        .then(response => response.json())
+        .then(data => {
+          countryData = data;
+          const select = document.getElementById('country');
+          select.innerHTML = "";
+          data.forEach(country => {
+            const option = document.createElement("option");
+            option.value = country.name; // store name only
+            option.textContent = `${country.name} (+${country.code})`;
+            select.appendChild(option);
+          });
+          select.value = "India"; // default selection
+        })
+        .catch(error => {
+          console.error("Failed to load countries:", error);
+          const select = document.getElementById('country');
+          select.innerHTML = '<option value="">Failed to load</option>';
+        });
+    };
+
+    function Register() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const gmail = document.getElementById("email").value.trim();
+  let phone = document.getElementById("phone").value.trim();
+  const country = document.getElementById("country").value;
+  const genderRadio = document.querySelector("input[name='gender']:checked");
+  const gender = genderRadio ? genderRadio.value : "";
+  const errorDiv = document.getElementById("phone-error");
+  const responseMsg = document.getElementById("response-msg");
+
+  // Clear previous messages
+  responseMsg.textContent = "";
+  responseMsg.style.color = "";
+
+  // Phone validation
+  if (!/^\d{10}$/.test(phone)) {
+    errorDiv.textContent = "Phone number must be exactly 10 digits.";
+    return;
+  } else {
+    errorDiv.textContent = "";
+  }
+
+  // Remove leading zero if exists
+  if (phone.startsWith("0")) {
+    phone = phone.substring(1);
+  }
+
+  // Find country code from name
+  const countryCode = countryData.find(c => c.name === country)?.code || "";
+  const fullPhone = `+${countryCode}${phone}`;
+
+  const data = {
+    username,
+    password,
+    gmail,
+    phone: fullPhone,
+    gender,
+    country
+  };
+
+  // Store the email for potential resend
+  lastSubmittedEmail = gmail;
+
+  // Send to backend
+  fetch('http://13.126.122.0:3000/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(res => {
+    if (!res.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return res.json();
+  })
+  .then(data => {
+    // Check for both 'success' and other possible success indicators
+    if (data.success || data.message?.includes('success') || data.status === 'success') {
+      showVerificationModal();
+      document.querySelector(".login-form").reset();
+    } else {
+      responseMsg.style.color = "red";
+      responseMsg.textContent = data.message || "Registration failed. Please try again.";
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    responseMsg.style.color = "red";
+    responseMsg.textContent = "Registration failed. Please try again.";
+  });
+}
+
+    // Modal functions
+    function showVerificationModal() {
+      const modal = document.getElementById("verificationModal");
+      modal.style.display = "block";
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("verificationModal");
+      modal.style.display = "none";
+    }
+
+    function resendVerification() {
+      if (!lastSubmittedEmail) return;
+      
+      fetch('http://13.126.122.0:3000/api/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: lastSubmittedEmail })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const modalMessage = document.getElementById("modalMessage");
+        if (data.success) {
+          modalMessage.textContent = "Verification email resent successfully! Please check your inbox.";
+        } else {
+          modalMessage.textContent = "Failed to resend verification email. " + (data.message || "Please try again later.");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        const modalMessage = document.getElementById("modalMessage");
+        modalMessage.textContent = "Error resending verification email. Please try again later.";
+      });
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+      const modal = document.getElementById("verificationModal");
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+  </script>
+</body>
+</html>
