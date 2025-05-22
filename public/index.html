@@ -27,31 +27,28 @@
 
   <script>
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
-      event.preventDefault(); // Stop form from reloading the page
+      event.preventDefault();
 
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
-      const data = { username, password };
 
       try {
-        const response = await fetch('http://13.126.122.0:3000/api/logUsers', {
+        const response = await fetch('/api/logUsers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
         });
 
         const result = await response.json();
 
         if (result.success) {
-          // Redirect to dashboard page
-          window.location.href = "logged/dashboard.html";
+          window.location.href = result.redirect;
         } else {
-          // Show error message
-          alert(result.message || "Username or password doesn't match. Please try again!");
+          alert(result.message || "Login failed. Please try again!");
         }
-
       } catch (error) {
-        console.error("Error logging in:", error);
+        console.error("Login error:", error);
         alert("Something went wrong. Please try again later.");
       }
     });

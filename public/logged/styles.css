@@ -1,0 +1,321 @@
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #1a1a2e;
+  color: #e6e6e6;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Dashboard Layout */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Top Bar Styles */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 2rem;
+  background-color: #16213e;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.top-bar h1 {
+  font-size: 1.5rem;
+  color: #4cc9f0;
+  font-weight: 700;
+}
+
+.top-nav ul {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+}
+
+.top-nav a {
+  color: #e6e6e6;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.top-nav a:hover {
+  background-color: #4cc9f0;
+  color: #16213e;
+}
+
+/* Main Content Area */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left Sidebar Styles */
+.left-sidebar {
+  width: 250px;
+  background-color: #0f3460;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.left-sidebar h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  color: #4cc9f0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #4cc9f0;
+}
+
+.game-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.game-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.game-item:hover {
+  background-color: rgba(76, 201, 240, 0.2);
+}
+
+.game-item.selected {
+  background-color: #4cc9f0;
+  color: #16213e;
+}
+
+.game-item img {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* Game Container Styles */
+.game-container {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.unity-game {
+  flex: 1;
+  background-color: #0a0a1a;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#game-frame {
+  width: 100%;
+  height: calc(100% - 50px);
+  border: none;
+}
+
+.game-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #16213e;
+}
+
+.game-controls button {
+  background-color: #4cc9f0;
+  color: #16213e;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.game-controls button:hover {
+  background-color: #3aa8d8;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: #16213e;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #e6e6e6;
+}
+
+.close-btn:hover {
+  color: #4cc9f0;
+}
+
+.modal h2 {
+  color: #4cc9f0;
+  margin-bottom: 1.5rem;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #4cc9f0;
+  background-color: #0f3460;
+  color: #e6e6e6;
+}
+
+.save-btn,
+.pay-btn {
+  background-color: #4cc9f0;
+  color: #16213e;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover,
+.pay-btn:hover {
+  background-color: #3aa8d8;
+}
+
+/* Payment Tabs */
+.payment-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #4cc9f0;
+}
+
+.tab-btn {
+  padding: 0.8rem 1.5rem;
+  background: none;
+  border: none;
+  color: #e6e6e6;
+  cursor: pointer;
+  font-weight: 600;
+  position: relative;
+}
+
+.tab-btn.active {
+  color: #4cc9f0;
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #4cc9f0;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .left-sidebar {
+    width: 100%;
+    height: 150px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .game-list {
+    flex-direction: row;
+  }
+
+  .top-nav ul {
+    gap: 0.5rem;
+  }
+}
+.game-item.coming-soon {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.game-item.coming-soon:hover {
+  background-color: transparent;
+}

@@ -4,6 +4,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const mysql = require('mysql2/promise');
 const nodemailer = require('nodemailer');
+const session = require('express-session');
 require('dotenv').config();
 
 const app = express();
@@ -24,46 +25,62 @@ const pool = mysql.createPool({
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'ariharan86400@gmail.com',
-    pass: 'efxjqsryflqkdcdx' // Make sure this app password is valid
+    user: process.env.EMAIL_USER || 'ariharan86400@gmail.com',
+    pass: process.env.EMAIL_PASS || 'efxjqsryflqkdcdx'
   }
 });
 
-// Middleware
-app.use(cors());
+// Middleware setup
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-strong-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: 'lax'
+  }
+}));
+
+// Authentication middleware
+const requireAuth = (req, res, next) => {
+  if (req.session?.authenticated) {
+    return next();
+  }
+  res.status(401).redirect('/');
+};
 
 // Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-
 app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
-
-
-
-
-
-
-//function to log in users
+// Login endpoint
 app.post('/api/logUsers', async (req, res) => {
   const { username, password } = req.body;
 
   try {
     const [users] = await pool.query(
-      'SELECT username, is_verified FROM users WHERE username = ? AND password = ?',
+      'SELECT sno, username, password, gmail, phone, gender, country, is_verified FROM users WHERE username = ? AND password = ?',
       [username, password]
     );
 
     if (users.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "The username or password is incorrect. Please try again!"
+        message: "Invalid username or password"
       });
     }
 
@@ -72,181 +89,128 @@ app.post('/api/logUsers', async (req, res) => {
     if (!user.is_verified) {
       return res.status(400).json({
         success: false,
-        message: "Your email is not verified yet. Please check your inbox for the verification link."
+        message: "Please verify your email first"
       });
     }
 
-    return res.json({
+    req.session.authenticated = true;
+    req.session.user = {
+      id: user.sno,
+      username: user.username,
+      email: user.gmail,
+      phone: user.phone,
+      gender: user.gender,
+      country: user.country
+    };
+
+    res.json({
       success: true,
-      message: 'You have logged in successfully'
+      message: 'Login successful',
+      redirect: '/logged/dashboard.html'
     });
   } catch (error) {
-    console.error("Cannot fetch from the database:", error);
-    return res.status(500).json({
+    console.error("Login error:", error);
+    res.status(500).json({
       success: false,
-      message: "Internal server error. Please try again later."
+      message: "Server error during login"
     });
   }
 });
 
+// Protected routes
+app.get('/logged/dashboard.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'logged', 'dashboard.html'));
+});
 
+app.get('/api/user-data', requireAuth, (req, res) => {
+  res.json({
+    success: true,
+    user: req.session.user
+  });
+});
 
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Logout failed' 
+      });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ 
+      success: true, 
+      message: 'Logged out successfully' 
+    });
+  });
+});
 
-
-
-
-
-
-// Registration endpoint with UUID verification
+// Registration endpoint
 app.post('/api/register', async (req, res) => {
   const { username, password, gmail, phone, gender, country } = req.body;
-
-  console.log("Received registration request:", req.body);
-
   const verificationToken = uuidv4();
   const verificationLink = `http://${req.headers.host}/verify-email?token=${verificationToken}`;
 
   try {
-    // Check for existing username in verified accounts
-    const [verifiedUsername] = await pool.query(
-      'SELECT sno FROM users WHERE username = ? AND is_verified = 1',
+    const [existingUser] = await pool.query(
+      'SELECT sno FROM users WHERE username = ?',
       [username]
     );
 
-    if (verifiedUsername.length > 0) {
+    if (existingUser.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'The username already exists, please try again!'
+        message: 'Username already exists'
       });
     }
 
-    // Check for existing email in verified accounts
-    const [verifiedEmail] = await pool.query(
-      'SELECT sno FROM users WHERE gmail = ? AND is_verified = 1',
+    const [existingEmail] = await pool.query(
+      'SELECT sno FROM users WHERE gmail = ?',
       [gmail]
     );
 
-    if (verifiedEmail.length > 0) {
+    if (existingEmail.length > 0) {
       return res.status(400).json({
         success: false,
         message: 'Email already registered'
       });
     }
 
-    // Check if this exact username+email combo exists unverified
-    const [existingUnverified] = await pool.query(
-      'SELECT sno FROM users WHERE username = ? AND gmail = ? AND is_verified = 0',
-      [username, gmail]
-    );
-
-    if (existingUnverified.length > 0) {
-      // Update the existing unverified record with new details
-      await pool.query(
-        `UPDATE users 
-        SET password = ?, phone = ?, gender = ?, country = ?, 
-            verification_token = ?, created_at = NOW()
-        WHERE username = ? AND gmail = ? AND is_verified = 0`,
-        [password, phone, gender, country, verificationToken, username, gmail]
-      );
-
-      // Resend verification email
-      await sendVerificationEmail(gmail, username, verificationLink);
-      
-      return res.json({
-        success: true,
-        message: 'New verification email sent! Please check your inbox.'
-      });
-    }
-
-    // Check if username exists unverified (with different email)
-    const [usernameExists] = await pool.query(
-      'SELECT sno FROM users WHERE username = ? AND is_verified = 0',
-      [username]
-    );
-
-    if (usernameExists.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'The username already exists, please try again!'
-      });
-    }
-
-    // Check if email exists unverified (with different username)
-    const [emailExists] = await pool.query(
-      'SELECT sno FROM users WHERE gmail = ? AND is_verified = 0',
-      [gmail]
-    );
-
-    if (emailExists.length > 0) {
-      // Delete the old unverified record with this email
-      await pool.query(
-        'DELETE FROM users WHERE gmail = ? AND is_verified = 0',
-        [gmail]
-      );
-    }
-
-    // New registration (or re-registration after deleting old unverified record)
     await pool.query(
       `INSERT INTO users 
       (username, password, gmail, phone, gender, country, verification_token, is_verified)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [username, password, gmail, phone, gender, country, verificationToken, false]
+      [username, password, gmail, phone, gender, country, verificationToken, 0]
     );
 
-    await sendVerificationEmail(gmail, username, verificationLink);
+    await transporter.sendMail({
+      from: '"Game Platform" <ariharan86400@gmail.com>',
+      to: gmail,
+      subject: 'Verify Your Email',
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Welcome to our platform!</h2>
+          <p>Please verify your email by clicking this link:</p>
+          <a href="${verificationLink}">Verify Email</a>
+          <p>Or copy this URL: ${verificationLink}</p>
+        </div>
+      `
+    });
 
     res.json({
       success: true,
-      message: 'Verification email sent! Please check your inbox.'
+      message: 'Verification email sent'
     });
-
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      message: 'Registration failed. Please try again.'
+      message: 'Registration failed'
     });
   }
 });
-
-
-
-// Helper function for sending verification emails
-async function sendVerificationEmail(gmail, username, verificationLink) {
-  await transporter.sendMail({
-    from: '"Your Service Name" <ariharan86400@gmail.com>',
-    replyTo: 'ariharan86400@gmail.com',
-    to: gmail,
-    subject: 'Verify Your Email',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Welcome to Our Service!</h2>
-        <p>Hello ${username},</p>
-        <p>Please verify your email address to complete your registration:</p>
-        <a href="${verificationLink}" 
-           style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; 
-                  color: white; text-decoration: none; border-radius: 5px; margin: 15px 0;">
-          Verify Email
-        </a>
-        <p>Or copy this link to your browser:</p>
-        <p style="word-break: break-all;">${verificationLink}</p>
-        <p>This link will expire in 24 hours.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      </div>
-    `,
-    headers: {
-      'X-Priority': '3',
-      'X-Mailer': 'NodeMailer'
-    }
-  });
-  console.log("Verification email sent to:", gmail);
-}
-
-
-
-
-
-
 
 // Email verification endpoint
 app.get('/verify-email', async (req, res) => {
@@ -259,8 +223,8 @@ app.get('/verify-email', async (req, res) => {
   try {
     const [result] = await pool.query(
       `UPDATE users 
-      SET is_verified = TRUE, verification_token = NULL 
-      WHERE verification_token = ? AND is_verified = FALSE`,
+       SET is_verified = 1, verification_token = NULL 
+       WHERE verification_token = ? AND is_verified = 0`,
       [token]
     );
 
@@ -271,78 +235,49 @@ app.get('/verify-email', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'verification-success.html'));
   } catch (error) {
     console.error('Verification error:', error);
-    res.status(500).send('Verification failed. Please try again.');
+    res.status(500).send('Verification failed');
   }
 });
 
-
-
-
-
-
-
-// Resend verification endpoint
+// Resend verification email
 app.post('/api/resend-verification', async (req, res) => {
   const { email } = req.body;
-  console.log("Resend request for:", email);
 
   try {
     const [users] = await pool.query(
-      'SELECT username FROM users WHERE gmail = ? AND is_verified = FALSE',
+      'SELECT username, verification_token FROM users WHERE gmail = ? AND is_verified = 0',
       [email]
     );
 
     if (users.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Email already verified or not found'
+        message: 'Email not found or already verified'
       });
     }
 
     const user = users[0];
-    const newToken = uuidv4();
-    const verificationLink = `http://${req.headers.host}/verify-email?token=${newToken}`;
-
-    await pool.query(
-      'UPDATE users SET verification_token = ? WHERE gmail = ?',
-      [newToken, email]
-    );
+    const verificationLink = `http://${req.headers.host}/verify-email?token=${user.verification_token}`;
 
     await transporter.sendMail({
-      from: '"Your Service Name" <ariharan86400@gmail.com>',
-      replyTo: 'ariharan86400@gmail.com',
+      from: '"Game Platform" <ariharan86400@gmail.com>',
       to: email,
-      subject: 'New Verification Link',
+      subject: 'Verify Your Email',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">New Verification Link</h2>
-          <p>Hello ${user.username},</p>
-          <p>Here's your new verification link:</p>
-          <a href="${verificationLink}" 
-             style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; 
-                    color: white; text-decoration: none; border-radius: 5px; margin: 15px 0;">
-            Verify Email
-          </a>
-          <p>Or copy this link to your browser:</p>
-          <p style="word-break: break-all;">${verificationLink}</p>
-          <p>This link will expire in 24 hours.</p>
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Verification Email</h2>
+          <p>Here's your verification link:</p>
+          <a href="${verificationLink}">Verify Email</a>
         </div>
-      `,
-      headers: {
-        'X-Priority': '3',
-        'X-Mailer': 'NodeMailer'
-      }
+      `
     });
-
-    console.log("Resent verification email to:", email);
 
     res.json({
       success: true,
-      message: 'New verification email sent successfully'
+      message: 'Verification email resent'
     });
-
   } catch (error) {
-    console.error('Resend verification error:', error);
+    console.error('Resend error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to resend verification email'

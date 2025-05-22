@@ -3,9 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Blueout Games</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        #unity-container {
+            width: 100%;
+            height: 100%;
+            background: grey;
+        }
+        #unity-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
 </head>
 <body>
-    
+    <div class="dashboard">
+        <!-- Top Navigation Bar -->
+        <header class="top-bar">
+            <div class="logo-section">
+                <img src="https://via.placeholder.com/40" alt="Blueout Games Logo" class="logo">
+                <h1>Blueout Games</h1>
+            </div>
+            <nav class="top-nav">
+                <ul>
+                    <li><a href="#" id="about-btn">About</a></li>
+                    <li><a href="#" id="account-btn">Account Details</a></li>
+                    <li><a href="#" id="transactions-btn">Transactions</a></li>
+                    <li><a href="#" id="logout-btn">Logout</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Left Sidebar - Game List -->
+            <aside class="left-sidebar">
+                <h2>Game Library</h2>
+                <div class="game-list">
+                    <div class="game-item selected" data-game="TileVania" data-path="games/TileVania">
+                        <img src="TemplateData/thumbnail.png" alt="TileVania">
+                        <span>TileVania</span>
+                    </div>
+                    <div class="game-item coming-soon">
+                        <img src="https://via.placeholder.com/80/333333/666666?text=Coming+Soon" alt="Coming Soon">
+                        <span>New Game (Coming Soon)</span>
+                    </div>
+                    <div class="game-item coming-soon">
+                        <img src="https://via.placeholder.com/80/333333/666666?text=Coming+Soon" alt="Coming Soon">
+                        <span>New Game (Coming Soon)</span>
+                    </div>
+                    <div class="game-item coming-soon">
+                        <img src="https://via.placeholder.com/80/333333/666666?text=Coming+Soon" alt="Coming Soon">
+                        <span>New Game (Coming Soon)</span>
+                    </div>
+                    <div class="game-item coming-soon">
+                        <img src="https://via.placeholder.com/80/333333/666666?text=Coming+Soon" alt="Coming Soon">
+                        <span>New Game (Coming Soon)</span>
+                    </div>
+                    <div class="game-item coming-soon">
+                        <img src="https://via.placeholder.com/80/333333/666666?text=Coming+Soon" alt="Coming Soon">
+                        <span>New Game (Coming Soon)</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Game Area -->
+            <main class="game-container">
+                <div class="unity-game">
+                    <div id="unity-container">
+                        <canvas id="unity-canvas"></canvas>
+                    </div>
+                    <div class="game-controls">
+                        <button id="fullscreen-btn"><i class="fas fa-expand"></i> Fullscreen</button>
+                        <button id="mute-btn"><i class="fas fa-volume-up"></i> Mute</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="about-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>About Blueout Games</h2>
+            <p>Welcome to Blueout Games, your premier destination for high-quality browser-based gaming experiences.</p>
+            <p>Our platform is constantly updated with new games and features.</p>
+        </div>
+    </div>
+
+    <div id="account-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Account Details</h2>
+            <form id="account-form">
+                <div class="form-group">
+                    <label for="account-username">Username:</label>
+                    <input type="text" id="account-username" name="username" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="account-email">Email:</label>
+                    <input type="email" id="account-email" name="email" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="account-phone">Phone Number:</label>
+                    <input type="tel" id="account-phone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="account-gender">Gender:</label>
+                    <input type="text" id="account-gender" name="gender" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="account-country">Country:</label>
+                    <input type="text" id="account-country" name="country" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="account-password">Change Password:</label>
+                    <input type="password" id="account-password" name="password" placeholder="Enter new password">
+                </div>
+                <button type="submit" class="save-btn">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="transactions-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Payment Options</h2>
+            <div class="payment-tabs">
+                <button class="tab-btn active" data-tab="bank-tab">Bank Transfer</button>
+                <button class="tab-btn" data-tab="gpay-tab">GPay</button>
+            </div>
+            
+            <div id="bank-tab" class="tab-content active">
+                <form id="bank-form">
+                    <div class="form-group">
+                        <label for="bank-name">Bank Name:</label>
+                        <input type="text" id="bank-name" name="bank-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="account-number">Account Number:</label>
+                        <input type="text" id="account-number" name="account-number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="routing-number">Routing Number:</label>
+                        <input type="text" id="routing-number" name="routing-number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount ($):</label>
+                        <input type="number" id="amount" name="amount" min="1" required>
+                    </div>
+                    <button type="submit" class="pay-btn">Proceed with Bank Transfer</button>
+                </form>
+            </div>
+            
+            <div id="gpay-tab" class="tab-content">
+                <form id="gpay-form">
+                    <div class="form-group">
+                        <label for="upi-id">UPI ID:</label>
+                        <input type="text" id="upi-id" name="upi-id" placeholder="username@upi" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gpay-amount">Amount ($):</label>
+                        <input type="number" id="gpay-amount" name="gpay-amount" min="1" required>
+                    </div>
+                    <button type="submit" class="pay-btn">Proceed with GPay</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Authentication check and user data loading
+        fetch('/api/user-data', {
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                window.location.href = '/';
+                throw new Error('Not authenticated');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                const user = data.user;
+                document.getElementById('account-username').value = user.username;
+                document.getElementById('account-email').value = user.email;
+                document.getElementById('account-phone').value = user.phone || '';
+                document.getElementById('account-gender').value = user.gender || '';
+                document.getElementById('account-country').value = user.country || '';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.location.href = '/';
+        });
+
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';
+                    }
+                });
+            }
+        });
+
+        // Unity game loader
+        function loadUnityGame(gamePath) {
+            const container = document.getElementById('unity-container');
+            container.innerHTML = '<canvas id="unity-canvas"></canvas>';
+            
+            createUnityInstance(document.querySelector("#unity-canvas"), {
+                dataUrl: gamePath + "/Build/Web.data",
+                frameworkUrl: gamePath + "/Build/Web.framework.js",
+                codeUrl: gamePath + "/Build/Web.wasm",
+                companyName: "Blueout",
+                productName: "TileVania",
+                productVersion: "1.0",
+            }).then((unityInstance) => {
+                console.log("Unity game loaded");
+                window.currentUnityInstance = unityInstance;
+            }).catch((err) => {
+                console.error("Unity load error:", err);
+            });
+        }
+
+        // Load TileVania by default
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load the Unity loader script dynamically
+            const script = document.createElement('script');
+            script.src = 'games/TileVania/Build/Web.loader.js';
+            script.onload = function() {
+                loadUnityGame('games/TileVania');
+                
+                // Game selection functionality
+                const gameItems = document.querySelectorAll('.game-item');
+                gameItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (this.classList.contains('coming-soon')) return;
+                        if (this.classList.contains('selected')) return;
+                        
+                        document.querySelector('.game-item.selected').classList.remove('selected');
+                        this.classList.add('selected');
+                        
+                        const gamePath = this.getAttribute('data-path');
+                        if (gamePath) {
+                            loadUnityGame(gamePath);
+                        }
+                    });
+                });
+
+                // Fullscreen functionality
+                document.getElementById('fullscreen-btn').addEventListener('click', function() {
+                    const canvas = document.getElementById('unity-canvas');
+                    if (canvas.requestFullscreen) {
+                        canvas.requestFullscreen();
+                    } else if (canvas.webkitRequestFullscreen) {
+                        canvas.webkitRequestFullscreen();
+                    }
+                });
+
+                // Mute functionality
+                document.getElementById('mute-btn').addEventListener('click', function() {
+                    if (window.currentUnityInstance) {
+                        const isMuted = window.currentUnityInstance.GetMute();
+                        window.currentUnityInstance.SetMute(!isMuted);
+                        this.innerHTML = isMuted ? 
+                            '<i class="fas fa-volume-up"></i> Mute' : 
+                            '<i class="fas fa-volume-mute"></i> Unmute';
+                    }
+                });
+            };
+            document.body.appendChild(script);
+
+            // Modal functionality
+            const aboutBtn = document.getElementById('about-btn');
+            const accountBtn = document.getElementById('account-btn');
+            const transactionsBtn = document.getElementById('transactions-btn');
+            const aboutModal = document.getElementById('about-modal');
+            const accountModal = document.getElementById('account-modal');
+            const transactionsModal = document.getElementById('transactions-modal');
+            const closeBtns = document.querySelectorAll('.close-btn');
+            
+            aboutBtn.addEventListener('click', () => aboutModal.style.display = 'flex');
+            accountBtn.addEventListener('click', () => accountModal.style.display = 'flex');
+            transactionsBtn.addEventListener('click', () => transactionsModal.style.display = 'flex');
+            
+            closeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+            
+            window.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+            
+            // Payment tabs functionality
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    document.querySelector('.tab-btn.active').classList.remove('active');
+                    this.classList.add('active');
+                    
+                    document.querySelector('.tab-content.active').classList.remove('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Form submissions
+            document.getElementById('account-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Account details updated successfully!');
+                accountModal.style.display = 'none';
+            });
+            
+            document.getElementById('bank-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Bank transfer initiated successfully!');
+                transactionsModal.style.display = 'none';
+            });
+            
+            document.getElementById('gpay-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('GPay payment initiated successfully!');
+                transactionsModal.style.display = 'none';
+            });
+        });
+    </script>
 </body>
 </html>
